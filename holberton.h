@@ -3,8 +3,8 @@
 
 #include <SDL2/SDL.h>
 
-#define T_W 100
-#define T_H 50
+#define T_W 112
+#define T_H 56
 #define TILES 7
 #define WIDTH 800
 #define HEIGHT 600
@@ -16,6 +16,6 @@ typedef struct SDL_Instance
 } SDL_Instance;
 
 int init_instance(SDL_Instance *);
-void draw_stuff(SDL_Instance *);
-ssize_t read_textfile(const char *filename, size_t letters);
+void draw_stuff(SDL_Instance *, int **);
+int **parse_terrain(const char*);
 #endif

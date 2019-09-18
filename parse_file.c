@@ -1,53 +1,57 @@
-#include <unistd.h>
-#include <stdlib.h>
-#include <fcntl.h>
 #include "holberton.h"
+#include <stdlib.h>
+#include <unistd.h>
+#include <fcntl.h>
 
-/**
- * read_textfile - reads and prints from a file
- * @filename: path to file
- * @letters: chars to read
- * Return: chars read
- */
-ssize_t read_textfile(const char *filename, size_t letters)
+int ** parse_terrain(const char *file)
 {
-	int fd;
-	char *buff;
-	ssize_t bytes, r;
+	int i = 0, j = 0;
+	FILE *fp;
+	char *buff = 0;
+	size_t bytes = 1024;
+	int **terrain;
+	char *token;
+	char *del = " \n";
 
-	if (!filename)
+	fp = fopen(file, "r");
+	if (!fp)
 		return (0);
-	fd = open(filename, O_RDONLY);
-	if (fd == -1)
+
+	terrain = malloc(sizeof(int *) * bytes);
+	if(!terrain)
 	{
-		close(fd);
+		fclose(fp);
 		return (0);
 	}
 
-	buff = malloc(sizeof(char) * letters);
-	if (!buff)
+	while (getline(&buff, &bytes, fp) != EOF)
 	{
-		close(fd);
-		return (0);
+		terrain[i] = malloc(sizeof(int) * bytes);
+		if (!terrain[i])
+		{
+			int k;
+
+			for (k = 0; k < i; k++)
+				free(terrain[k]);
+			free(terrain);
+			fclose(fp);
+			free(buff);
+			return (0);
+		}
+		token = strtok(buff, del);
+		j = 0;
+		while (token)
+		{
+			int val = atoi(token);
+
+			terrain[i][j] = val;
+			token = strtok(0, del);
+			j++;
+		}
+		i++;
 	}
-
-	bytes = read(fd, buff, letters);
-
-	if (bytes == -1)
-	{
-		close(fd);
-		free(buff);
-		return (0);
-	}
-
-	r = write(STDOUT_FILENO, buff, bytes);
-
-	if (r == -1)
-	{
-		close(fd);
-		free(buff);
-		return (0);
-	}
-	close(fd);
-	return (bytes);
+	
+	fclose(fp);
+	free(buff);
+	return (terrain);
 }
