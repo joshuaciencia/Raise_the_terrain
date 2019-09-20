@@ -8,7 +8,7 @@
 #define TILES 7
 #define WIDTH 1000
 #define HEIGHT 800
-#define ELEVATE 0
+#define ELEVATE 1
 
 typedef struct SDL_Instance
 {

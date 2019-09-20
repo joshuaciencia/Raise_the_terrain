@@ -111,10 +111,10 @@ void draw_stuff(SDL_Instance *instance, int ** terrain, double angle)
 			
 			if (ELEVATE)
 			{
-				translate(&tile, 0, terrain[y][x]);
-				translate(&top_r, 0, terrain[y][x + 1]);
-				translate(&bottom_r, 0, terrain[y + 1][x]);
-				translate(&bottom_l, 0, terrain[y + 1][x + 1]);
+				translate(&tile, 0, -terrain[y][x]);
+				translate(&top_r, 0, -terrain[y][x + 1]);
+				translate(&bottom_r, 0, -terrain[y + 1][x + 1]);
+				translate(&bottom_l, 0, -terrain[y + 1][x]);
 			}
 
 			/* draw tile */
