@@ -3,11 +3,12 @@
 
 #include <SDL2/SDL.h>
 
-#define T_W 112
-#define T_H 56
+#define T_W 128
+#define T_H 64
 #define TILES 7
-#define WIDTH 800
-#define HEIGHT 600
+#define WIDTH 1000
+#define HEIGHT 800
+#define ELEVATE 0
 
 typedef struct SDL_Instance
 {
@@ -16,6 +17,9 @@ typedef struct SDL_Instance
 } SDL_Instance;
 
 int init_instance(SDL_Instance *);
-void draw_stuff(SDL_Instance *, int **);
+void draw_stuff(SDL_Instance *, int **, double);
 int **parse_terrain(const char*);
+void to_iso(SDL_Point*);
+void translate(SDL_Point*, int, int);
+void draw_line(SDL_Instance *, SDL_Point*, SDL_Point*);
 #endif

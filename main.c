@@ -1,4 +1,5 @@
 #include "holberton.h"
+#include <math.h>
 
 int main(int argc, char* argv[])
 {
@@ -11,15 +12,7 @@ int main(int argc, char* argv[])
 	/* read terrain from file */
 
 	int **terrain = parse_terrain(argv[1]);
-
-	int i, j;
-
-	for (i = 0; i < 8; i++)
-	{
-		for (j = 0; j < 8; j++)
-			printf("%d ", terrain[i][j]);
-		printf("\n");
-	}
+	double ang = 0;
 
 	while (running)
 	{
@@ -42,7 +35,8 @@ int main(int argc, char* argv[])
 			}
 		}
 		/* render graphics */
-		draw_stuff(&instance, terrain);
+		draw_stuff(&instance, terrain, ang);
+		ang += 0.0001;
 		/* display graphics */
 		SDL_RenderPresent(instance.renderer);
 	}
@@ -60,7 +54,7 @@ int init_instance (SDL_Instance *instance)
 		return (1);
 	}
 	instance->window = SDL_CreateWindow("Raise the terrain by Joshua Hernandez",
-		       	SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, 0);
+		       	SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, 0);
 
 	if (instance->window == NULL)
 	{
@@ -81,17 +75,18 @@ int init_instance (SDL_Instance *instance)
 	return (0);
 }
 /* draw grid */
-void draw_stuff(SDL_Instance *instance, int ** terrain)
+void draw_stuff(SDL_Instance *instance, int ** terrain, double angle)
 {
 	int start_x = WIDTH / 2;
-	int start_y = HEIGHT / 2 - T_H * TILES / 3;
 	int y, x, tiles = 0;
+	int start_y = HEIGHT / 2;
 
 	/* calculate tiles based on the file */
 	while (terrain[tiles])
 	{
 		tiles++;
 	}
+	start_y -= tiles * T_H / 2;
 	/* draw the lines with white color */
 	SDL_SetRenderDrawColor(instance->renderer, 0xFF, 0xFF, 0xFF, 0xFF);
 	/* draw lines */
@@ -99,30 +94,53 @@ void draw_stuff(SDL_Instance *instance, int ** terrain)
 	{
 		for (x = 0; x < tiles - 1; x++)
 		{
-			int x_offset = ((x - y) * T_W / 2);
-			int y_offset = ((x + y) * T_H / 2);
+			SDL_Point tile = {x, y};
 
-			int ele_tl = terrain[y][x];
-			int ele_tr = terrain[y][x + 1];
-			int ele_bl = terrain[y + 1][x];
-			int ele_br = terrain[y + 1][x + 1];
+			SDL_Point top_r, bottom_l, bottom_r;
 
-			int tl_x = start_x + x_offset;
-			int tl_y = start_y - T_H / 2 + y_offset - ele_tl;
-			int tr_x = start_x + T_W / 2 + x_offset;
-			int tr_y = start_y + y_offset - ele_tr;
-			int bl_x = start_x - T_W / 2 + x_offset;
-			int bl_y = start_y + y_offset - ele_bl;
-			int br_x = start_x + x_offset;
-			int br_y = start_y + T_H / 2 + y_offset - ele_br;
-			/* draw up side */
-			SDL_RenderDrawLine(instance->renderer, tl_x, tl_y, tr_x, tr_y);
-			/* draw left side */
-			SDL_RenderDrawLine(instance->renderer, tl_x, tl_y, bl_x, bl_y);
-			/* draw right side */
-			SDL_RenderDrawLine(instance->renderer, tr_x, tr_y, br_x, br_y);
-			/* draw down side */
-			SDL_RenderDrawLine(instance->renderer, bl_x, bl_y, br_x, br_y);
+			to_iso(&tile);
+			translate(&tile, start_x, start_y);
+
+			top_r = (SDL_Point){tile.x, tile.y};
+			bottom_r = (SDL_Point){tile.x, tile.y};
+			bottom_l = (SDL_Point){tile.x, tile.y};
+
+			translate(&top_r, T_W / 2, T_H / 2);
+			translate(&bottom_r, 0, T_H);
+			translate(&bottom_l, -T_W / 2, T_H / 2);
+			
+			if (ELEVATE)
+			{
+				translate(&tile, 0, terrain[y][x]);
+				translate(&top_r, 0, terrain[y][x + 1]);
+				translate(&bottom_r, 0, terrain[y + 1][x]);
+				translate(&bottom_l, 0, terrain[y + 1][x + 1]);
+			}
+
+			/* draw tile */
+			draw_line(instance, &tile, &top_r);
+			draw_line(instance, &top_r, &bottom_r);
+			draw_line(instance, &bottom_r, &bottom_l);
+			draw_line(instance, &bottom_l, &tile);
 		}
 	}
+} 
+
+void to_iso(SDL_Point *point)
+{
+	int x = point->x;
+	int y = point->y;
+	point->y = (x + y) * T_H / 2;
+	point->x = (x - y) * T_W / 2;
 }
+void translate(SDL_Point * point, int x, int y)
+{
+	point->x += x;
+	point->y += y;
+}
+
+void draw_line(SDL_Instance *instance, SDL_Point *a, SDL_Point *b)
+{
+	SDL_RenderDrawLine(instance->renderer, a->x, a->y, b->x, b->y);
+}
+
