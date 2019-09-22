@@ -5,14 +5,15 @@ int main(int argc, char* argv[])
 {
 	SDL_Instance instance;
 	SDL_bool running = SDL_TRUE;
+	int **terrain;
+	double ang = 0;
 
 	if (init_instance(&instance) != 0)
 		return (1);
 
 	/* read terrain from file */
 
-	int **terrain = parse_terrain(argv[1]);
-	double ang = 0;
+	terrain = parse_terrain(argv[1]);
 
 	while (running)
 	{
@@ -29,14 +30,18 @@ int main(int argc, char* argv[])
 					running = SDL_FALSE;
 				case SDL_KEYDOWN:
 					key = event.key;
-					if (key.keysym.scancode == 0x29)
+					if (key.keysym.scancode == SDL_SCANCODE_ESCAPE)
 						running = SDL_FALSE;
+					if (key.keysym.scancode == SDL_SCANCODE_LEFT)
+						ang -= DELTA;
+					if (key.keysym.scancode == SDL_SCANCODE_RIGHT)
+						ang += DELTA;
 					break;
 			}
+			
 		}
 		/* render graphics */
 		draw_stuff(&instance, terrain, ang);
-		ang += 0.0001;
 		/* display graphics */
 		SDL_RenderPresent(instance.renderer);
 	}
@@ -108,7 +113,12 @@ void draw_stuff(SDL_Instance *instance, int ** terrain, double angle)
 			translate(&top_r, T_W / 2, T_H / 2);
 			translate(&bottom_r, 0, T_H);
 			translate(&bottom_l, -T_W / 2, T_H / 2);
-			
+
+			rotate(&tile, angle);
+			rotate(&top_r, angle);
+			rotate(&bottom_r, angle);
+			rotate(&bottom_l, angle);
+
 			if (ELEVATE)
 			{
 				translate(&tile, 0, -terrain[y][x]);
@@ -137,6 +147,34 @@ void translate(SDL_Point * point, int x, int y)
 {
 	point->x += x;
 	point->y += y;
+}
+
+void rotate(SDL_Point *point, double angle)
+{
+	int x = point->x;
+	int y = point->y;
+	int len;
+	double ang;
+
+	/* fist translate to origin */
+
+	x -= WIDTH / 2;
+	y -= HEIGHT / 2;
+
+	ang = get_angle(x, y) + angle;
+	len = sqrt(x * x + y * y);
+	point->x = len * cos(ang);
+	point->y = len * sin(ang);
+
+	/* translate back to center */
+
+	point->x += WIDTH / 2;
+	point->y += HEIGHT / 2;
+}
+
+double get_angle(int x, int y)
+{
+	return (atan2(y, x));
 }
 
 void draw_line(SDL_Instance *instance, SDL_Point *a, SDL_Point *b)
