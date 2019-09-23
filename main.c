@@ -7,6 +7,7 @@ int main(int argc, char* argv[])
 	SDL_bool running = SDL_TRUE;
 	int **terrain;
 	double ang = 0;
+	double time = 0, last;
 
 	if (init_instance(&instance) != 0)
 		return (1);
@@ -14,6 +15,8 @@ int main(int argc, char* argv[])
 	/* read terrain from file */
 
 	terrain = parse_terrain(argv[1]);
+
+	last = (double)SDL_GetTicks();
 
 	while (running)
 	{
@@ -40,8 +43,16 @@ int main(int argc, char* argv[])
 			}
 			
 		}
+
+		/* acumulate time */
+
+		time += ((double)SDL_GetTicks() - last) / INTER_TIME;
+		last = (double)SDL_GetTicks();
+		if (time >= 1.0)
+			time = 0;
+
 		/* render graphics */
-		draw_stuff(&instance, terrain, ang);
+		draw_stuff(&instance, terrain, ang, &time);
 		/* display graphics */
 		SDL_RenderPresent(instance.renderer);
 	}
@@ -80,11 +91,12 @@ int init_instance (SDL_Instance *instance)
 	return (0);
 }
 /* draw grid */
-void draw_stuff(SDL_Instance *instance, int ** terrain, double angle)
+void draw_stuff(SDL_Instance *instance, int ** terrain, double angle, double *time)
 {
-	int start_x = WIDTH / 2;
 	int y, x, tiles = 0;
+	int start_x = WIDTH / 2;
 	int start_y = HEIGHT / 2;
+	int tly, try, bly, bry;
 
 	/* calculate tiles based on the file */
 	while (terrain[tiles])
@@ -121,17 +133,18 @@ void draw_stuff(SDL_Instance *instance, int ** terrain, double angle)
 
 			if (ELEVATE)
 			{
-				translate(&tile, 0, -terrain[y][x]);
-				translate(&top_r, 0, -terrain[y][x + 1]);
-				translate(&bottom_r, 0, -terrain[y + 1][x + 1]);
-				translate(&bottom_l, 0, -terrain[y + 1][x]);
+				translate(&tile, 0, -lerp(*time, 0, terrain[y][x]));
+				translate(&top_r, 0, -lerp(*time, 0, terrain[y][x + 1]));
+				translate(&bottom_r, 0, -lerp(*time, 0, terrain[y + 1][x + 1]));
+				translate(&bottom_l, 0, -lerp(*time, 0, terrain[y + 1][x]));
 			}
-
 			/* draw tile */
 			draw_line(instance, &tile, &top_r);
 			draw_line(instance, &top_r, &bottom_r);
 			draw_line(instance, &bottom_r, &bottom_l);
 			draw_line(instance, &bottom_l, &tile);
+
+			tile.y = tly;
 		}
 	}
 } 
@@ -182,3 +195,7 @@ void draw_line(SDL_Instance *instance, SDL_Point *a, SDL_Point *b)
 	SDL_RenderDrawLine(instance->renderer, a->x, a->y, b->x, b->y);
 }
 
+int lerp(double t, int start, int end)
+{
+	return (int)(start + ((end - start) * t));
+}

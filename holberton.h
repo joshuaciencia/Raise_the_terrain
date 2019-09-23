@@ -9,6 +9,7 @@
 #define WIDTH 1000
 #define HEIGHT 800
 #define ELEVATE 1
+#define INTER_TIME 5000
 #define DELTA 0.03
 
 typedef struct SDL_Instance
@@ -18,11 +19,12 @@ typedef struct SDL_Instance
 } SDL_Instance;
 
 int init_instance(SDL_Instance *);
-void draw_stuff(SDL_Instance *, int **, double);
+void draw_stuff(SDL_Instance *, int **, double, double *);
 int **parse_terrain(const char*);
 void to_iso(SDL_Point*);
 void translate(SDL_Point*, int, int);
-double get_angle(int x, int y);
+double get_angle(int, int);
 void rotate(SDL_Point*, double);
 void draw_line(SDL_Instance *, SDL_Point*, SDL_Point*);
+int lerp(double, int, int);
 #endif
