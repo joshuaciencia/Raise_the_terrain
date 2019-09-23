@@ -3,27 +3,27 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-int ** parse_terrain(const char *file)
+/**
+ * parse_terrain - parses a square matrix from file
+ * @file: file to be parsed
+ * Return: terrain
+ */
+int **parse_terrain(const char *file)
 {
-	int i = 0, j = 0;
+	int i = 0, j = 0, **terrain;
 	FILE *fp;
-	char *buff = 0;
 	size_t bytes = 1024;
-	int **terrain;
-	char *token;
-	char *del = " \n";
+	char *token, *del = " \n", *buff = 0;
 
 	fp = fopen(file, "r");
 	if (!fp)
 		return (0);
-
 	terrain = malloc(sizeof(int *) * bytes);
-	if(!terrain)
+	if (!terrain)
 	{
 		fclose(fp);
 		return (0);
 	}
-
 	while (getline(&buff, &bytes, fp) != EOF)
 	{
 		terrain[i] = malloc(sizeof(int) * bytes);
@@ -50,7 +50,6 @@ int ** parse_terrain(const char *file)
 		}
 		i++;
 	}
-	
 	fclose(fp);
 	free(buff);
 	return (terrain);

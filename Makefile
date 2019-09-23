@@ -1,4 +1,4 @@
-SRC = main.c parse_file.c
+SRC = main.c parse_file.c core.c
 EXE = raise_terrain
 FILE = file
 all :
