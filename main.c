@@ -131,9 +131,8 @@ int init_instance(SDL_Instance *instance)
 /**
  * draw_stuff - draws the terrain
  * @instance: sdl instance
- * @elevation: elevation terrain array
- * @angle: angle of rotation
- * @time: interpolation time
+ * @terrain: terrain coords
+ * @time: time since last iteration
  * Return: void
  */
 void draw_stuff(SDL_Instance *instance,
@@ -188,6 +187,13 @@ void draw_stuff(SDL_Instance *instance,
 	}
 }
 
+/**
+ * rotate_point - rotates points in 3d space around z axis
+ * @x: x coord
+ * @y: y coord
+ * @ang: angle of rotation
+ * Return: void
+ */
 void rotate_point(double *x, double *y, double ang)
 {
 	/*      == rotation matrix ==
@@ -201,6 +207,13 @@ void rotate_point(double *x, double *y, double ang)
 
 }
 
+/**
+ * world_to_screen - maps 3d coords to screen coords
+ * @x: x coord
+ * @y: y coord
+ * @z: z coord
+ * Return: screen point
+ */
 SDL_Point *world_to_screen(double x, double y, double z)
 {
 	SDL_Point *p = malloc(sizeof(SDL_Point));
