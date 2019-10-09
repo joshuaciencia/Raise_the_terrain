@@ -17,12 +17,16 @@ int **parse_terrain(const char *file)
 
 	fp = fopen(file, "r");
 	if (!fp)
-		return (0);
+	{
+		fprintf(stderr, "Error: File not found %s\n", file);
+		exit(EXIT_FAILURE);
+	}
 	terrain = malloc(sizeof(int *) * bytes);
 	if (!terrain)
 	{
 		fclose(fp);
-		return (0);
+		fprintf(stderr, "Not enough memory to allocate\n");
+		exit(EXIT_FAILURE);
 	}
 	while (getline(&buff, &bytes, fp) != EOF)
 	{
@@ -36,7 +40,8 @@ int **parse_terrain(const char *file)
 			free(terrain);
 			fclose(fp);
 			free(buff);
-			return (0);
+			fprintf(stderr, "Not enough memory to allocate\n");
+			exit(EXIT_FAILURE);
 		}
 		token = strtok(buff, del);
 		j = 0;

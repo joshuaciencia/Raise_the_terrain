@@ -10,12 +10,36 @@ int main(int argc, char *argv[])
 {
 	SDL_Instance instance;
 	SDL_bool running = SDL_TRUE;
-	int **terrain;
+	int **elevation, y, x;
 	double ang = 0, time = 0, last = (double)SDL_GetTicks();
+	double half_map = 3 * T_S + T_S / 2;
+	double terrain[8][8][3];
 
 	if (init_instance(&instance) != 0)
 		return (1);
-	terrain = parse_terrain(argv[1]);
+
+	if (argc != 2)
+	{
+		fprintf(stderr, "Usage: terrain file\n");
+		exit(EXIT_FAILURE);
+	}
+
+	elevation = parse_terrain(argv[1]);
+
+	for (y = 0; y < 8; y++)
+	{
+		for (x = 0; x < 8; x++)
+		{
+			double p_x = x * T_S - half_map;
+			double p_y = y * T_S - half_map;
+			double p_z = elevation[y][x];
+
+			terrain[y][x][0] = p_x;
+			terrain[y][x][1] = p_y;
+			terrain[y][x][2] = p_z;
+                }
+        }
+
 	while (running)
 	{
 		SDL_SetRenderDrawColor(instance.renderer, 0, 0, 0, 0);
@@ -25,6 +49,7 @@ int main(int argc, char *argv[])
 
 		while (SDL_PollEvent(&event))
 		{
+			ang = 0;
 			switch (event.type)
 			{
 				case SDL_QUIT:
@@ -34,18 +59,36 @@ int main(int argc, char *argv[])
 					if (key.keysym.scancode == SDL_SCANCODE_ESCAPE)
 						running = SDL_FALSE;
 					if (key.keysym.scancode == SDL_SCANCODE_LEFT)
-						ang -= DELTA;
+						ang = -DELTA;
 					if (key.keysym.scancode == SDL_SCANCODE_RIGHT)
-						ang += DELTA;
+						ang = DELTA;
 			}
 		}
 		time += ((double)SDL_GetTicks() - last) / INTER_TIME;
 		last = (double)SDL_GetTicks();
 		if (time >= 1.0)
 			time = 0;
-		draw_stuff(&instance, terrain, ang, &time);
+
+        	for (y = 0; y < 8; y++)
+        	{
+                	for (x = 0; x < 8; x++)
+                	{
+				double p_x = terrain[y][x][0];
+				double p_y = terrain[y][x][1];
+				double p_z = terrain[y][x][2];
+				
+				rotate_point(&p_x, &p_y, ang);
+
+                        	terrain[y][x][0] = p_x;
+                        	terrain[y][x][1] = p_y;
+                        	terrain[y][x][2] = p_z;
+                	}
+        	}
+		draw_stuff(&instance, terrain, &time);
 		SDL_RenderPresent(instance.renderer);
 	}
+
+
 	SDL_DestroyRenderer(instance.renderer);
 	SDL_DestroyWindow(instance.window);
 	SDL_Quit();
@@ -88,55 +131,85 @@ int init_instance(SDL_Instance *instance)
 /**
  * draw_stuff - draws the terrain
  * @instance: sdl instance
- * @terrain: elevation terrain matrix
+ * @elevation: elevation terrain array
  * @angle: angle of rotation
  * @time: interpolation time
  * Return: void
  */
 void draw_stuff(SDL_Instance *instance,
-		int **terrain, double angle, double *time)
+		double terrain[8][8][3], double *time)
 {
-	int y, x, tiles = 0;
-	int start_x = WIDTH / 2;
-	int start_y = HEIGHT / 2;
+	int y, x;
+	int center_x = WIDTH / 2;
+	int center_y = HEIGHT / 2;
 
-	while (terrain[tiles])
-		tiles++;
-	start_y -= tiles * T_H / 2;
 	SDL_SetRenderDrawColor(instance->renderer, 0xFF, 0xFF, 0xFF, 0xFF);
-	for (y = 0; y < tiles - 1; y++)
+	for (y = 0; y < 7; y++)
 	{
-		for (x = 0; x < tiles - 1; x++)
+		for (x = 0; x < 7; x++)
 		{
-			SDL_Point tile = {x, y};
-			SDL_Point top_r, bottom_l, bottom_r;
 
-			to_iso(&tile);
-			translate(&tile, start_x, start_y);
-			top_r = (SDL_Point){tile.x, tile.y};
-			bottom_r = (SDL_Point){tile.x, tile.y};
-			bottom_l = (SDL_Point){tile.x, tile.y};
-			translate(&top_r, T_W / 2, T_H / 2);
-			translate(&bottom_r, 0, T_H);
-			translate(&bottom_l, -T_W / 2, T_H / 2);
-			rotate(&tile, angle);
-			rotate(&top_r, angle);
-			rotate(&bottom_r, angle);
-			rotate(&bottom_l, angle);
-			if (ELEVATE)
-			{
-				translate(&tile, 0, -lerp(*time, 0, terrain[y][x]));
-				translate(&top_r, 0, -lerp(*time, 0, terrain[y][x + 1]));
-				translate(&bottom_r, 0, -lerp(*time, 0, terrain[y + 1][x + 1]));
-				translate(&bottom_l, 0, -lerp(*time, 0, terrain[y + 1][x]));
-			}
-			draw_line(instance, &tile, &top_r);
-			draw_line(instance, &top_r, &bottom_r);
-			draw_line(instance, &bottom_r, &bottom_l);
-			draw_line(instance, &bottom_l, &tile);
+                        /* convert world coords to screen coords */
+
+			SDL_Point *tl = world_to_screen(terrain[y][x][0],
+				       	terrain[y][x][1], terrain[y][x][2]);
+			
+			SDL_Point *tr = world_to_screen(terrain[y][x + 1][0],
+				       	terrain[y][x + 1][1], terrain[y][x + 1][2]);
+			
+			SDL_Point *bl = world_to_screen(terrain[y + 1][x][0],
+				       	terrain[y + 1][x][1], terrain[y + 1][x][2]);
+			
+			SDL_Point *br = world_to_screen(terrain[y + 1][x + 1][0],
+				       	terrain[y + 1][x + 1][1], terrain[y + 1][x + 1][2]);
+                        
+			/* translate to center */
+
+			tl->x += center_x;
+			tr->x += center_x;
+			bl->x += center_x;
+			br->x += center_x;
+
+			tl->y += center_y;
+			tr->y += center_y;
+			bl->y += center_y;
+			br->y += center_y;
+
+			draw_line(instance, tl, tr);
+			draw_line(instance, tr, br);
+			draw_line(instance, br, bl);
+			draw_line(instance, tl, bl);
+
+			free(tl);
+			free(tr);
+			free(bl);
+			free(br);
 		}
 	}
 }
+
+void rotate_point(double *x, double *y, double ang)
+{
+	/*      == rotation matrix ==
+	 * [  cos(angle) | sin(angle) | 0 ]
+	 * [ -sin(angle) | cos(angle) | 0 ]
+	 * [           0 |          0 | 1 ]
+	 */
+
+	*x = *x * cos(ang) - *y * sin(ang);
+	*y = *x * sin(ang) + *y * cos(ang);
+
+}
+
+SDL_Point *world_to_screen(double x, double y, double z)
+{
+	SDL_Point *p = malloc(sizeof(SDL_Point));
+
+	p->x = (int)round(INCLINATION * x - INCLINATION * y);
+	p->y = (int)round((1 - INCLINATION) * x + (1 - INCLINATION) * y - z);
+	return (p);
+}
+
 /**
  * draw_line - draws a line from a to b
  * @instance: sdl instance
