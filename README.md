@@ -1,6 +1,6 @@
 # Raise The Terrain
 
-Isometric 3D projection of an elevated terrain for Holberton School
+Isometric 3D projection of an elevated terrain
 
 ## Usage
 
