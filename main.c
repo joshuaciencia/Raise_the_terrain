@@ -1,4 +1,4 @@
-#include "holberton.h"
+#include "base.h"
 
 /**
  * main - Raise the terrain by Joshua Hernandez
