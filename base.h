@@ -1,5 +1,5 @@
-#ifndef _HOLBERTON
-#define _HOLBERTON
+#ifndef _BASE
+#define _BASE
 
 #include <SDL2/SDL.h>
 #include <math.h>
